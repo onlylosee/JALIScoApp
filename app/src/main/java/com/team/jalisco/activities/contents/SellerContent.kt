@@ -135,7 +135,7 @@ fun SellerContent(
             },
         topBar = {
             Box(
-                modifier = Modifier.fillMaxWidth().padding(16.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
                 IconButton(onClick = {
                     focus.clearFocus()

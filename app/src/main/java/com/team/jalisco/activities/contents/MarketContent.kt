@@ -29,6 +29,7 @@ import androidx.compose.material.IconButton
 import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.Surface
+import androidx.compose.material.Text
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -48,12 +49,17 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.team.jalisco.ProductsCard
+import com.team.jalisco.R
 import com.team.jalisco.activities.marketContent.ProfileHeader
 import com.team.jalisco.domain.CustomButton
 import com.team.jalisco.domain.CustomMenuIcon
@@ -61,7 +67,6 @@ import com.team.jalisco.domain.CustomTextFieldForProduct
 import com.team.jalisco.domain.model.CustomDrawerState
 import com.team.jalisco.domain.model.opposite
 import com.team.jalisco.domain.util.Item
-import com.team.jalisco.domain.util.addAllToCart
 import com.team.jalisco.domain.util.addProductToCart
 import com.team.jalisco.domain.util.supabaseCreate
 import io.github.jan.supabase.auth.auth
@@ -80,7 +85,7 @@ fun MarketContent(
     val focus = LocalFocusManager.current
     val client = supabaseCreate()
     val cartItems = remember { mutableStateListOf<Map<String, String>>() }
-
+    var thisContext = LocalContext.current
     var amountOfProduct by remember { mutableStateOf("") }
     var totallyCost by remember { mutableStateOf(0f) } // Общее значение стоимости
 
@@ -228,7 +233,7 @@ fun MarketContent(
                             modifier = Modifier.padding(top = 32.dp),
                             text = "Add to cart",
                             onClick = {
-                                if (amountOfProduct.toInt() <= product.amount.toInt() && amountOfProduct.isNotEmpty()) {
+                                if (amountOfProduct.toInt() <= product.amount.toInt() && amountOfProduct.toInt() >= 1) {
                                     coroutineScope.launch {
                                         val userId = client.auth.currentUserOrNull()?.id
                                         if (userId == null) {
@@ -236,11 +241,13 @@ fun MarketContent(
                                             return@launch
                                         }
 
-                                        // Вызов функции addProductToCart
                                         addProductToCart(
+                                            supabaseClient = client,
                                             userId = userId,
                                             productId = product.id,
-                                            amount = amountOfProduct.toInt()
+                                            amount = amountOfProduct,
+                                            product.amount,
+                                            context = thisContext
                                         )
                                     }
                                 } else {
@@ -266,6 +273,17 @@ fun MarketContent(
                     Icon(
                         painter = CustomMenuIcon("menu"),
                         contentDescription = "Menu Icon"
+                    )
+                }
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Market",
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        fontSize = 24.sp,
+                        fontFamily = FontFamily(Font(R.font.flameregular))
                     )
                 }
             }
