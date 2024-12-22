@@ -6,7 +6,6 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawBehind
@@ -16,14 +15,12 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.max
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.storage.Storage
@@ -36,7 +33,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.json.JSONArray
-import org.w3c.dom.CharacterData
 import java.io.InputStream
 
 @Serializable
@@ -114,7 +110,7 @@ fun Modifier.coloredShadow(
 
 suspend fun fetchItemsFromSupabase(user: UserInfo?): List<Item> {
     return withContext(Dispatchers.IO) {
-        val client = supabaseCreate()
+        val client = SupabaseClientSingleton.getClient()
         val userId = user?.id ?: throw Exception("asd")
         val itemsResponse = client.postgrest.from("items").select(Columns.ALL) {
             filter {
@@ -150,15 +146,22 @@ suspend fun fetchItemsFromSupabase(user: UserInfo?): List<Item> {
     }
 }
 
+object SupabaseClientSingleton {
 
-fun supabaseCreate(): SupabaseClient {
-    return createSupabaseClient(
-        supabaseUrl = "https://miysqzrlswurvlayaicr.supabase.co",
-        supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1peXNxenJsc3d1cnZsYXlhaWNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQzMTAwNzEsImV4cCI6MjA0OTg4NjA3MX0.kppDYE0f1Bcdzm19bKJbbz7H31AbKjVvewcvSev76W8"
-    ) {
-        install(Auth)
-        install(Postgrest)
-        install(Storage)
+    private var supabaseClient: SupabaseClient? = null
+
+    fun getClient(): SupabaseClient {
+        if (supabaseClient == null) {
+            supabaseClient = createSupabaseClient(
+                supabaseUrl = "https://miysqzrlswurvlayaicr.supabase.co",
+                supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1peXNxenJsc3d1cnZsYXlhaWNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQzMTAwNzEsImV4cCI6MjA0OTg4NjA3MX0.kppDYE0f1Bcdzm19bKJbbz7H31AbKjVvewcvSev76W8"
+            ) {
+                install(Auth)
+                install(Postgrest)
+                install(Storage)
+            }
+        }
+        return supabaseClient!!
     }
 }
 
@@ -269,7 +272,7 @@ suspend fun uploadProductDataToSupabase(
 }
 
 suspend fun loadDataFromSupabase(
-    client: SupabaseClient = supabaseCreate(),
+    client: SupabaseClient = SupabaseClientSingleton.getClient(),
     onDataLoaded: (String, String, String, String, String, String) -> Unit
 ) {
     try {
@@ -304,7 +307,7 @@ suspend fun loadDataFromSupabase(
 }
 
 suspend fun loadNickDataFromSupabase(
-    client: SupabaseClient = supabaseCreate(),
+    client: SupabaseClient = SupabaseClientSingleton.getClient(),
     onDataLoaded: (String) -> Unit
 ) {
     try {
@@ -407,7 +410,7 @@ suspend fun uploadProductImageToSupabaseStorage(
 suspend fun uploadStringToSupabase(
     string: String?,
     tableString: String?,
-    client: SupabaseClient = supabaseCreate(),
+    client: SupabaseClient = SupabaseClientSingleton.getClient(),
     onSuccess: () -> Unit,
     onError: (String) -> Unit
 ) {
@@ -456,7 +459,14 @@ suspend fun addProductToCart(
         try {
             // Запрос к базе данных Supabase для получения корзины
             val response = supabaseClient.postgrest["cart"]
-                .select(Columns.Companion.list("product_id", "amount")) { filter { eq("user_id", userId) } }
+                .select(Columns.Companion.list("product_id", "amount")) {
+                    filter {
+                        eq(
+                            "user_id",
+                            userId
+                        )
+                    }
+                }
 
             // Настройка JSON-парсера с игнорированием неизвестных ключей
             val json = Json { ignoreUnknownKeys = true }
@@ -487,7 +497,9 @@ suspend fun addProductToCart(
                 if (cartItem.productId == productId) {
                     productFound = true
                     // Обновляем количество товара, учитывая максимальное значение
-                    val newAmount = (cartItem.amount.toInt() + amount.toInt()).coerceAtMost(maxAmount.toInt()).toString()
+                    val newAmount =
+                        (cartItem.amount.toInt() + amount.toInt()).coerceAtMost(maxAmount.toInt())
+                            .toString()
                     updatedQuantities.add(newAmount) // Обновляем количество для этого товара
                     updatedProducts.add(cartItem.productId) // Оставляем тот же productId
                 } else {
@@ -527,47 +539,64 @@ data class ProductCartItem(
     val cost: String,
     val nickname: String,
     val categories: String,
-    val amount: String
+    var amount: String
 )
 
-suspend fun loadCartAndProducts(supabaseClient: SupabaseClient, userId: String): List<ProductCartItem> {
+val json = Json { ignoreUnknownKeys = true }
+
+suspend fun loadCartAndProducts(
+    supabaseClient: SupabaseClient,
+    userId: String
+): List<ProductCartItem> {
     try {
         // Шаг 1: Получить список всех заказов пользователя
         val cartResponse = supabaseClient.postgrest["cart"]
-            .select(Columns.Companion.list("product_id", "amount")) { filter { eq("user_id", userId) } }
+            .select(Columns.Companion.list("product_id", "amount")) {
+                filter {
+                    eq("user_id", userId)
+                }
+            }
 
         val cartItems = try {
-            Json.decodeFromString<List<CartItem>>(cartResponse.data)
+            json.decodeFromString<List<CartItem>>(cartResponse.data)
         } catch (e: Exception) {
             println("Error parsing cart items: ${e.localizedMessage}")
             return emptyList()
         }
 
-        // Шаг 2: Для каждого product_id в корзине, получаем детали из таблицы items
-        val productIds = cartItems.map { it.productId }
-        val productDetailsResponse = supabaseClient.postgrest["items"]
-            .select(Columns.list("id, name, image, cost, description"))
-            {filter { eq("id", productIds) }}
+        // Шаг 2: Для каждого product_id в корзине, получаем детали товара
+        val productItems = mutableListOf<ProductCartItem>()
+        for (cartItem in cartItems) {
+            val productResponse = supabaseClient.postgrest["items"]
+                .select(Columns.list("id, name, image, cost, description, user_id, nickname, categories")) {
+                    filter{eq("id", cartItem.productId)}
+                }
 
-        val productItems = try {
-            Json.decodeFromString<List<ProductCartItem>>(productDetailsResponse.data)
-        } catch (e: Exception) {
-            println("Error parsing product details: ${e.localizedMessage}")
-            return emptyList()
-        }
-
-        // Шаг 3: Собираем данные о товарах для отображения
-        return cartItems.mapNotNull { cartItem ->
-            val product = productItems.find { it.product_id == cartItem.productId }
-            product?.let {
-                it.copy(cost = (it.cost.toInt() * cartItem.amount.toInt()).toString())
+            try {
+                // Десериализуем ответ в объект с игнорированием неизвестных ключей
+                val productList = json.decodeFromString<List<ProductCartItem>>(productResponse.data)
+                val product = productList.firstOrNull()
+                if (product != null) {
+                    // Если product_id и amount есть, используем их для расчета стоимости
+                    val updatedProduct = product.copy(
+                        cost = (product.cost.toInt() * cartItem.amount.toInt()).toString(),
+                        amount = cartItem.amount
+                    )
+                    productItems.add(updatedProduct)
+                }
+            } catch (e: Exception) {
+                println("Error parsing product details for product ${cartItem.productId}: ${e.localizedMessage}")
             }
         }
 
+        return productItems
     } catch (e: Exception) {
         println("Error loading cart and products: ${e.localizedMessage}")
         return emptyList()
     }
 }
+
+
+
 
 

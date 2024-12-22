@@ -67,8 +67,8 @@ import com.team.jalisco.domain.CustomTextFieldForProduct
 import com.team.jalisco.domain.model.CustomDrawerState
 import com.team.jalisco.domain.model.opposite
 import com.team.jalisco.domain.util.Item
+import com.team.jalisco.domain.util.SupabaseClientSingleton
 import com.team.jalisco.domain.util.addProductToCart
-import com.team.jalisco.domain.util.supabaseCreate
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -83,7 +83,7 @@ fun MarketContent(
     val myHomeFeedScrollState = rememberLazyGridState()
     val toolbarProgress = remember { mutableStateOf(0f) }
     val focus = LocalFocusManager.current
-    val client = supabaseCreate()
+    val client = SupabaseClientSingleton.getClient()
     val cartItems = remember { mutableStateListOf<Map<String, String>>() }
     var thisContext = LocalContext.current
     var amountOfProduct by remember { mutableStateOf("") }

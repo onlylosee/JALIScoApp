@@ -9,8 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.google.firebase.auth.FirebaseAuth
-import com.team.jalisco.domain.util.supabaseCreate
+import com.team.jalisco.domain.util.SupabaseClientSingleton
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.CoroutineScope
@@ -23,7 +22,7 @@ class RecoveryActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        supabase = supabaseCreate()
+        supabase = SupabaseClientSingleton.getClient()
 
         setContent {
             var showPopup by remember { mutableStateOf(false) }

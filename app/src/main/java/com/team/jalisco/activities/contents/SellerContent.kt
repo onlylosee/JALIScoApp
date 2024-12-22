@@ -74,9 +74,9 @@ import com.team.jalisco.domain.CustomTextFieldForProduct
 import com.team.jalisco.domain.model.CustomDrawerState
 import com.team.jalisco.domain.model.opposite
 import com.team.jalisco.domain.util.Item
+import com.team.jalisco.domain.util.SupabaseClientSingleton
 import com.team.jalisco.domain.util.fetchItemsFromSupabase
 import com.team.jalisco.domain.util.loadNickDataFromSupabase
-import com.team.jalisco.domain.util.supabaseCreate
 import com.team.jalisco.domain.util.uploadProductDataToSupabase
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -96,7 +96,7 @@ fun SellerContent(
     onDrawerClick: (CustomDrawerState) -> Unit
 ) {
     var context = LocalContext.current
-    var client: SupabaseClient = supabaseCreate()
+    var client: SupabaseClient = SupabaseClientSingleton.getClient()
     var focus = LocalFocusManager.current
     var croppedImageUri by remember { mutableStateOf<Uri?>(null) }
     var name by remember { mutableStateOf("") }
@@ -624,7 +624,7 @@ fun ItemCard(item: Item, onDelete: (String) -> Unit) {
 }
 
 suspend fun deleteItemFromSupabase(id: String): PostgrestResult {
-    val client = supabaseCreate()
+    val client = SupabaseClientSingleton.getClient()
     val table = client.postgrest.from("items")
 
     return table.delete() {

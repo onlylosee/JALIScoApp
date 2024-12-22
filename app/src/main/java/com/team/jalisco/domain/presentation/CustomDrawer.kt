@@ -36,8 +36,8 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.team.jalisco.R
 import com.team.jalisco.domain.model.NavigationItem
+import com.team.jalisco.domain.util.SupabaseClientSingleton
 import com.team.jalisco.domain.util.UserProfile
-import com.team.jalisco.domain.util.supabaseCreate
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
@@ -52,7 +52,7 @@ fun CustomDrawer(
     onCloseClick: () -> Unit,
 ) {
     var supabaseImageUrl by remember { mutableStateOf<String?>(null) }
-    var supabase = supabaseCreate()
+    var supabase = SupabaseClientSingleton.getClient()
     LaunchedEffect(Unit) {
         loadDataFromSupabase(supabase) {loadedImageUrl ->
             supabaseImageUrl = loadedImageUrl
@@ -110,7 +110,7 @@ fun CustomDrawer(
 }
 
 suspend fun loadDataFromSupabase(
-    client: SupabaseClient = supabaseCreate(),
+    client: SupabaseClient = SupabaseClientSingleton.getClient(),
     onDataLoaded: (String?) -> Unit
 ) {
     try {

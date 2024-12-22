@@ -73,8 +73,8 @@ import com.team.jalisco.domain.CustomMenuIcon
 import com.team.jalisco.domain.CustomTextField
 import com.team.jalisco.domain.model.CustomDrawerState
 import com.team.jalisco.domain.model.opposite
+import com.team.jalisco.domain.util.SupabaseClientSingleton
 import com.team.jalisco.domain.util.loadDataFromSupabase
-import com.team.jalisco.domain.util.supabaseCreate
 import com.team.jalisco.domain.util.uploadDataToSupabase
 import com.team.jalisco.domain.util.uploadStringToSupabase
 import io.github.jan.supabase.SupabaseClient
@@ -99,7 +99,7 @@ fun ProfileContent(
     modifier: Modifier = Modifier,
     drawerState: CustomDrawerState,
     onDrawerClick: (CustomDrawerState) -> Unit,
-    supabase: SupabaseClient = supabaseCreate(),
+    supabase: SupabaseClient = SupabaseClientSingleton.getClient(),
     onClick: () -> Unit
 ) {
     var imageSize by remember { mutableStateOf(100.dp) }

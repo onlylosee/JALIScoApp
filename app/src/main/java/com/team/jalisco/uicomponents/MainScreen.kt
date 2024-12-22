@@ -44,8 +44,8 @@ import com.team.jalisco.domain.model.CustomDrawerState
 import com.team.jalisco.domain.model.NavigationItem
 import com.team.jalisco.domain.model.isOpened
 import com.team.jalisco.domain.presentation.CustomDrawer
+import com.team.jalisco.domain.util.SupabaseClientSingleton
 import com.team.jalisco.domain.util.coloredShadow
-import com.team.jalisco.domain.util.supabaseCreate
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -108,7 +108,7 @@ fun MainScreen() {
                         shared.edit().clear().apply()
                         shared.edit().putBoolean("firstStartAnApp", false).apply()
                         CoroutineScope(Dispatchers.IO).launch {
-                            val supabase = supabaseCreate()
+                            val supabase = SupabaseClientSingleton.getClient()
                             supabase.auth.signOut()
                             Log.e("authOrNot", supabase.auth.currentUserOrNull().toString())
                             val intent = Intent(context, LoginActivity::class.java)
@@ -152,7 +152,7 @@ fun MainScreen() {
                     modifier = Modifier,
                     drawerState = drawerState,
                     onDrawerClick = { drawerState = it },
-                    supabase = supabaseCreate(),
+                    supabase = SupabaseClientSingleton.getClient(),
                     onClick = { TODO() }
                 )
 

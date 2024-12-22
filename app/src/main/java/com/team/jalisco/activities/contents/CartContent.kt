@@ -11,8 +11,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Icon
@@ -22,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardElevation
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TextField
@@ -50,8 +53,8 @@ import com.team.jalisco.domain.CustomMenuIcon
 import com.team.jalisco.domain.model.CustomDrawerState
 import com.team.jalisco.domain.model.opposite
 import com.team.jalisco.domain.util.ProductCartItem
+import com.team.jalisco.domain.util.SupabaseClientSingleton
 import com.team.jalisco.domain.util.loadCartAndProducts
-import com.team.jalisco.domain.util.supabaseCreate
 import io.github.jan.supabase.auth.auth
 import kotlinx.serialization.Serializable
 
@@ -66,8 +69,8 @@ fun CartContent(
     val context = LocalContext.current
     val cartItems = remember { mutableStateListOf<ProductCartItem>() }
     var totalCost by remember { mutableStateOf(0f) }
-    val client = supabaseCreate()
-    var userId = client.auth.currentUserOrNull()!!.id
+    val client = SupabaseClientSingleton.getClient()
+    var userId = client.auth.currentSessionOrNull()?.user?.id ?: throw Exception("BAD!")
     LaunchedEffect(Unit) {
         var loadedCartItems = loadCartAndProducts(client, userId)
         cartItems.addAll(loadedCartItems)
@@ -106,18 +109,12 @@ fun CartContent(
         }
     ){ paddingValues ->
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            Text(
-                text = "Your Cart",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(cartItems) { cartItem ->
+                items(cartItems.toList()) { cartItem -> // Преобразуем cartItems в обычный список
                     CartItemView(
                         cartItem = cartItem,
                         onQuantityChange = { newAmount ->
-                            cartItem.amount = newAmount
+                            cartItem.amount = newAmount.toString()
                             totalCost = cartItems.sumOf { it.cost.toInt() * it.amount.toInt() }.toFloat()
                         }
                     )
@@ -128,7 +125,7 @@ fun CartContent(
 
             Text(
                 text = "Total: $${"%.2f".format(totalCost)}",
-                style = MaterialTheme.typography.h6,
+                style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.align(Alignment.End)
             )
         }
@@ -137,17 +134,17 @@ fun CartContent(
 
 @Composable
 fun CartItemView(
-    cartItem: CartItem,
+    cartItem: ProductCartItem,
     onQuantityChange: (Int) -> Unit
 ) {
-    val painter = rememberAsyncImagePainter(cartItem.productImage)
+    val painter = rememberAsyncImagePainter(cartItem.image)
     var quantity by remember { mutableStateOf(cartItem.amount.toString()) }
 
-    Card(
+    androidx.compose.material.Card(
+        elevation = 4.dp,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
-        elevation = 4.dp,
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -159,7 +156,7 @@ fun CartItemView(
             // Image
             Image(
                 painter = painter,
-                contentDescription = cartItem.productName,
+                contentDescription = cartItem.name,
                 modifier = Modifier.size(80.dp),
                 contentScale = ContentScale.Crop
             )
@@ -168,7 +165,7 @@ fun CartItemView(
 
             // Name and cost
             Column(modifier = Modifier.weight(1f)) {
-                Text(cartItem.productName, style = MaterialTheme.typography.bodyMedium)
+                Text(cartItem.name, style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("Price: $${"%.2f".format(cartItem.cost)}", style = MaterialTheme.typography.bodyMedium)
             }

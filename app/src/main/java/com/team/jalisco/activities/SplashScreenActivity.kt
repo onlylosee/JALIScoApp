@@ -44,7 +44,7 @@ import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
 import com.team.jalisco.R
 import com.team.jalisco.domain.theme.MyAppTheme
-import com.team.jalisco.domain.util.supabaseCreate
+import com.team.jalisco.domain.util.SupabaseClientSingleton
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.delay
@@ -62,7 +62,7 @@ class SplashScreenActivity : ComponentActivity() {
 
         window.setDecorFitsSystemWindows(false)
 
-        supabase = supabaseCreate()
+        supabase = SupabaseClientSingleton.getClient()
         shared = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
 
         setContent {

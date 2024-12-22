@@ -25,14 +25,14 @@ import com.team.jalisco.domain.CustomButton
 import com.team.jalisco.domain.EmailField
 import com.team.jalisco.domain.PasswordField
 import com.team.jalisco.domain.theme.MyAppTheme
-import com.team.jalisco.domain.util.supabaseCreate
+import com.team.jalisco.domain.util.SupabaseClientSingleton
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.launch
 
 class RegisterActivity : ComponentActivity() {
-    private val supabase: SupabaseClient = supabaseCreate()
+    private val supabase: SupabaseClient = SupabaseClientSingleton.getClient()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

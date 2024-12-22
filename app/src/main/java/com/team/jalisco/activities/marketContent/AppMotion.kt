@@ -55,7 +55,7 @@ import androidx.constraintlayout.compose.MotionLayout
 import androidx.constraintlayout.compose.MotionScene
 import com.team.jalisco.R
 import com.team.jalisco.domain.util.Item
-import com.team.jalisco.domain.util.supabaseCreate
+import com.team.jalisco.domain.util.SupabaseClientSingleton
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
@@ -80,7 +80,7 @@ fun ProfileHeader(
     var items by remember { mutableStateOf<List<Item>>(emptyList()) }
     var filteredItems by remember { mutableStateOf<List<Item>>(emptyList()) }
 
-    val client = supabaseCreate()
+    val client = SupabaseClientSingleton.getClient()
 
     LaunchedEffect(Unit) {
         categories = loadCategories(client)
