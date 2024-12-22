@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
+import androidx.compose.material.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -29,17 +30,18 @@ fun ProductsCard(
     modifier: Modifier,
     name: String,
     cost: String,
-    image: String
+    image: String,
+    onClick: () -> Unit
 ) {
     Box(
-        modifier = modifier,
+        modifier = modifier
+            .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Card(
             elevation = 0.dp,
             modifier = Modifier
-                .fillMaxSize()
-                .clickable { Unit },
+                .fillMaxSize(),
             backgroundColor = Color.Transparent,
             shape = RoundedCornerShape(12.dp)
         ) {
@@ -64,8 +66,12 @@ fun ProductsCard(
                             .height(200.dp)
                             .padding(bottom = 8.dp)
                             .clip(RoundedCornerShape(32.dp))
-                            .background(MaterialTheme.colorScheme.primary,RoundedCornerShape(12.dp))
+                            .background(
+                                MaterialTheme.colorScheme.primary,
+                                RoundedCornerShape(12.dp)
+                            )
                     )
+
 
                 }
 

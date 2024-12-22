@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.team.jalisco.activities.LoginActivity
+import com.team.jalisco.activities.contents.CartContent
 import com.team.jalisco.activities.contents.MarketContent
 import com.team.jalisco.activities.contents.ProfileContent
 import com.team.jalisco.activities.contents.SellerContent
@@ -153,6 +154,12 @@ fun MainScreen() {
                     onDrawerClick = { drawerState = it },
                     supabase = supabaseCreate(),
                     onClick = { TODO() }
+                )
+
+                NavigationItem.Cart -> CartContent(
+                    modifier = Modifier,
+                    drawerState = drawerState,
+                    onDrawerClick = { drawerState = it },
                 )
 
                 NavigationItem.Settings -> SettingsContent(

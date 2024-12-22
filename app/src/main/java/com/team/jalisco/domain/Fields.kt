@@ -170,6 +170,7 @@ fun PasswordField(
 
 @Composable
 fun CustomTextField(
+    modifier: Modifier = Modifier,
     textValue: String,
     onValueChange: (String) -> Unit,
     labelText: String,
@@ -182,7 +183,7 @@ fun CustomTextField(
     isValid: Boolean?
 ) {
     OutlinedTextField(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth(),
         maxLines = 1,
         shape = RoundedCornerShape(20.dp),
@@ -232,7 +233,7 @@ fun CustomTextField(
 
 @Composable
 fun CustomTextFieldForProduct(
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     textValue: String,
     maxlines: Int = 1,
     onValueChange: (String) -> Unit,
@@ -327,21 +328,21 @@ fun CustomButton(
     onClick: () -> Unit,
     height: Dp = 50.dp,
     letterSpacing: Float = 0.1f,
-    modifier: Modifier = (Modifier
-        .fillMaxWidth()
-        .height(height)
-        .background(
-            Brush.linearGradient(
-                listOf(
-                    MaterialTheme.colorScheme.primary,
-                    Color(0xFF8000FF)
-                )
-            ),
-            shape = RoundedCornerShape(12.dp)
-        ))
+    modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
+            .fillMaxWidth()
+            .height(height)
+            .background(
+                Brush.linearGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.primary,
+                        Color(0xFF8000FF)
+                    )
+                ),
+                shape = RoundedCornerShape(12.dp)
+            )
     ) {
         Button(
             onClick = onClick,

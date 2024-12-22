@@ -97,7 +97,7 @@ fun CustomDrawer(
             contentDescription = "Zodiac Image"
         )
         Spacer(modifier = Modifier.height(40.dp))
-        NavigationItem.entries.toTypedArray().take(5).forEach { navigationItem ->
+        NavigationItem.entries.toTypedArray().take(6).forEach { navigationItem ->
             NavigationItemView(
                 navigationItem = navigationItem,
                 selected = navigationItem == selectedNavigationItem,

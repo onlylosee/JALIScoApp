@@ -8,7 +8,7 @@ enum class NavigationItem(
 ) {
     Home(
         icon = R.drawable.home,
-        title = "Home"
+        title = "Market"
     ),
     Profile(
         icon = R.drawable.profile,
@@ -17,6 +17,10 @@ enum class NavigationItem(
     Seller(
         icon = R.drawable.sell,
         title = "For sellers"
+    ),
+    Cart(
+        icon = R.drawable.cart,
+        title = "Cart"
     ),
     Settings(
         icon = R.drawable.settings,

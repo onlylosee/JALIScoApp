@@ -52,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
@@ -635,11 +636,15 @@ suspend fun deleteItemFromSupabase(id: String): PostgrestResult {
 
 @Composable
 fun cardText(
+    modifier: Modifier? = Modifier,
+    textAlign: TextAlign = TextAlign.Start,
     text: String,
 ) {
     Text(
+        modifier = modifier ?: Modifier,
         style = MaterialTheme.typography.bodyLarge,
         text = text,
+        textAlign = textAlign,
         fontFamily = FontFamily(Font(R.font.flamesans)),
         fontSize = 18.sp,
         color = MaterialTheme.colorScheme.onSecondary,

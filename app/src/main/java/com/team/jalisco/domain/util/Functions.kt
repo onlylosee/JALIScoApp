@@ -21,6 +21,7 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.storage.Storage
@@ -115,7 +116,6 @@ suspend fun fetchItemsFromSupabase(user: UserInfo?): List<Item> {
                 eq("user_id", userId)
             }
         }
-
 
 
         val jsonString = itemsResponse.data ?: "[]"
@@ -432,3 +432,61 @@ suspend fun uploadStringToSupabase(
         onError("Failed to upload data: ${e.localizedMessage}")
     }
 }
+
+suspend fun addProductToCart(userId: String, productId: String, amount: Int) {
+    try {
+        // Получаем текущие данные пользователя из таблицы cart
+        val cartDataResponse = supabaseCreate()
+            .from("cart")
+            .select(Columns.list("products, quantities"))
+            {filter{eq("user_id", userId)}}
+
+
+        val cartData = cartDataResponse.data?.firstOrNull() ?: mapOf<String, Any>()
+        val currentProductsJson = cartData["products"]
+        val currentQuantitiesJson = cartData["quantities"]
+
+        val currentProducts = if (currentProductsJson is String) {
+            currentProductsJson.split(",")
+        } else {
+            emptyList()
+        }
+
+        val currentQuantities = if (currentQuantitiesJson is String) {
+            currentQuantitiesJson.split(",").mapNotNull { it.toIntOrNull() }
+        } else {
+            emptyList()
+        }
+
+        val productIndex = currentProducts.indexOf(productId)
+        val newProducts: MutableList<String> = currentProducts.toMutableList()
+        val newQuantities: MutableList<Int> = currentQuantities.toMutableList()
+
+        if (productIndex != -1) {
+            newQuantities[productIndex] += amount
+        } else {
+            newProducts.add(productId)
+            newQuantities.add(amount)
+        }
+        val result = supabaseCreate()
+            .from("cart")
+            .upsert(
+                mapOf(
+                    "user_id" to userId,
+                    "products" to newProducts.joinToString(","),
+                    "quantities" to newQuantities.joinToString(",")
+                )
+            )
+            .eq("user_id", userId)
+            .execute()
+
+        if (result.error != null) {
+            throw Exception("Error updating cart: ${result.error.message}")
+        }
+    } catch (e: Exception) {
+        println("Exception occurred: ${e.localizedMessage}")
+    }
+}
+
+
+
