@@ -150,7 +150,8 @@ fun SellerContent(
                     text = "Your products",
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
                     textAlign = TextAlign.Center,
                     fontSize = 24.sp,
                     fontFamily = FontFamily(Font(R.font.flameregular))

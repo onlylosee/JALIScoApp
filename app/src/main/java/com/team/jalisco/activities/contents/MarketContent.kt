@@ -280,6 +280,7 @@ fun MarketContent(
                         text = "Market",
                         modifier = Modifier
                             .align(Alignment.Center)
+                            .padding(top = 8.dp)
                             .fillMaxWidth(),
                         textAlign = TextAlign.Center,
                         fontSize = 24.sp,

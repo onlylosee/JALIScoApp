@@ -519,26 +519,54 @@ suspend fun addProductToCart(
     }
 }
 
-suspend fun getCartItems(supabaseClient: SupabaseClient, userId: String): List<CartItem> {
-    return withContext(Dispatchers.IO) {
-        try {
-            val response = supabaseClient.postgrest["cart"]
-                .select(Columns.Companion.list("product_id", "amount")) { filter { eq("user_id", userId) } }
+@Serializable
+data class ProductCartItem(
+    val product_id: String,
+    val name: String,
+    val image: String,
+    val cost: String,
+    val nickname: String,
+    val categories: String,
+    val amount: String
+)
 
-            val json = Json { ignoreUnknownKeys = true }
+suspend fun loadCartAndProducts(supabaseClient: SupabaseClient, userId: String): List<ProductCartItem> {
+    try {
+        // Шаг 1: Получить список всех заказов пользователя
+        val cartResponse = supabaseClient.postgrest["cart"]
+            .select(Columns.Companion.list("product_id", "amount")) { filter { eq("user_id", userId) } }
 
-            val cartItems = try {
-                json.decodeFromString<List<CartItem>>(response.data)
-            } catch (e: Exception) {
-                println("Error parsing JSON: ${e.localizedMessage}")
-                emptyList()
-            }
-
-            cartItems
+        val cartItems = try {
+            Json.decodeFromString<List<CartItem>>(cartResponse.data)
         } catch (e: Exception) {
-            println("Error fetching cart items: ${e.localizedMessage}")
-            emptyList()
+            println("Error parsing cart items: ${e.localizedMessage}")
+            return emptyList()
         }
+
+        // Шаг 2: Для каждого product_id в корзине, получаем детали из таблицы items
+        val productIds = cartItems.map { it.productId }
+        val productDetailsResponse = supabaseClient.postgrest["items"]
+            .select(Columns.list("id, name, image, cost, description"))
+            {filter { eq("id", productIds) }}
+
+        val productItems = try {
+            Json.decodeFromString<List<ProductCartItem>>(productDetailsResponse.data)
+        } catch (e: Exception) {
+            println("Error parsing product details: ${e.localizedMessage}")
+            return emptyList()
+        }
+
+        // Шаг 3: Собираем данные о товарах для отображения
+        return cartItems.mapNotNull { cartItem ->
+            val product = productItems.find { it.product_id == cartItem.productId }
+            product?.let {
+                it.copy(cost = (it.cost.toInt() * cartItem.amount.toInt()).toString())
+            }
+        }
+
+    } catch (e: Exception) {
+        println("Error loading cart and products: ${e.localizedMessage}")
+        return emptyList()
     }
 }
 

@@ -63,6 +63,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
@@ -158,6 +159,18 @@ fun ProfileContent(
                 Icon(
                     painter = CustomMenuIcon("menu"),
                     contentDescription = "Menu Icon"
+                )
+            }
+            Box(modifier = Modifier.fillMaxWidth()) {
+                androidx.compose.material.Text(
+                    text = "Your Profile",
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(top = 8.dp)
+                        .fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    fontSize = 24.sp,
+                    fontFamily = FontFamily(Font(R.font.flameregular))
                 )
             }
         }
