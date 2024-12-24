@@ -32,6 +32,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONArray
 import java.io.InputStream
 
@@ -533,13 +535,13 @@ suspend fun addProductToCart(
 
 @Serializable
 data class ProductCartItem(
-    val product_id: String,
+    val product_id: String = "", // Значение по умолчанию
     val name: String,
     val image: String,
     val cost: String,
-    val nickname: String,
-    val categories: String,
-    var amount: String
+    val nickname: String = "",  // Значение по умолчанию
+    val categories: String = "", // Значение по умолчанию
+    var amount: String = "1" // Значение по умолчанию
 )
 
 val json = Json { ignoreUnknownKeys = true }
@@ -548,53 +550,101 @@ suspend fun loadCartAndProducts(
     supabaseClient: SupabaseClient,
     userId: String
 ): List<ProductCartItem> {
+    val cartItems = mutableListOf<ProductCartItem>()
+
     try {
-        // Шаг 1: Получить список всех заказов пользователя
+        // Загрузка корзины
         val cartResponse = supabaseClient.postgrest["cart"]
-            .select(Columns.Companion.list("product_id", "amount")) {
-                filter {
-                    eq("user_id", userId)
-                }
+            .select(Columns.list("product_id, amount")) {
+                filter { eq("user_id", userId) }
             }
 
-        val cartItems = try {
-            json.decodeFromString<List<CartItem>>(cartResponse.data)
-        } catch (e: Exception) {
-            println("Error parsing cart items: ${e.localizedMessage}")
-            return emptyList()
-        }
+        println("Cart Response: ${cartResponse.data}")
 
-        // Шаг 2: Для каждого product_id в корзине, получаем детали товара
-        val productItems = mutableListOf<ProductCartItem>()
-        for (cartItem in cartItems) {
-            val productResponse = supabaseClient.postgrest["items"]
-                .select(Columns.list("id, name, image, cost, description, user_id, nickname, categories")) {
-                    filter{eq("id", cartItem.productId)}
-                }
+        // Парсинг корзины
+        val cartItemsList = json.decodeFromString<List<CartItem>>(cartResponse.data)
+        println("Parsed Cart Items: $cartItemsList")
 
-            try {
-                // Десериализуем ответ в объект с игнорированием неизвестных ключей
-                val productList = json.decodeFromString<List<ProductCartItem>>(productResponse.data)
-                val product = productList.firstOrNull()
-                if (product != null) {
-                    // Если product_id и amount есть, используем их для расчета стоимости
-                    val updatedProduct = product.copy(
-                        cost = (product.cost.toInt() * cartItem.amount.toInt()).toString(),
-                        amount = cartItem.amount
-                    )
-                    productItems.add(updatedProduct)
+        for (cartItem in cartItemsList) {
+            // Разделяем `product_id` и `amount` по запятой
+            val productIds = cartItem.productId.split(",")
+            val amounts = cartItem.amount.split(",")
+
+            // Загружаем продукты по каждому ID
+            productIds.forEachIndexed { index, productId ->
+                try {
+                    val response = supabaseClient.postgrest["items"]
+                        .select(Columns.list("id, name, image, cost, nickname, categories")) {
+                            filter { eq("id", productId) }
+                        }
+
+                    val products = json.decodeFromString<List<ProductCartItem>>(response.data)
+                    if (products.isNotEmpty()) {
+                        val product = products.first()
+                        product.amount = amounts.getOrNull(index) ?: "1" // Используем соответствующее количество
+                        cartItems.add(product)
+                        println("Product loaded: $product")
+                    }
+                } catch (e: Exception) {
+                    println("Error loading product with id $productId: ${e.localizedMessage}")
                 }
-            } catch (e: Exception) {
-                println("Error parsing product details for product ${cartItem.productId}: ${e.localizedMessage}")
             }
         }
-
-        return productItems
     } catch (e: Exception) {
-        println("Error loading cart and products: ${e.localizedMessage}")
-        return emptyList()
+        println("Error loading cart: ${e.localizedMessage}")
+    }
+
+    return cartItems
+}
+suspend fun deleteCartItem(supabaseClient: SupabaseClient, userId: String, productId: String) {
+    try {
+        // Получаем все элементы корзины для данного пользователя
+        val response = supabaseClient.postgrest["cart"]
+            .select(Columns.list("product_id, amount")) {
+                filter { eq("user_id", userId) }
+            }
+
+        // Проверяем, что ответ не пуст
+        val data = response.data
+        println(data)
+        if (data.isNullOrEmpty()) {
+            println("No cart data found for user $userId.")
+            return
+        }
+
+        // Декодируем JSON только если данные есть
+        val cartJson = json.decodeFromString<JsonObject>(data.first().toString())
+
+        // Получаем строковые значения product_id и amount
+        val productIds = cartJson["product_id"]?.jsonPrimitive?.content?.split(",") ?: emptyList()
+        val amounts = cartJson["amount"]?.jsonPrimitive?.content?.split(",")?.map { it.toInt() } ?: emptyList()
+
+        // Находим индекс удаляемого продукта
+        val indexToRemove = productIds.indexOf(productId)
+        if (indexToRemove != -1) {
+            val updatedProductIds = productIds.filterIndexed { index, _ -> index != indexToRemove }
+            val updatedAmounts = amounts.filterIndexed { index, _ -> index != indexToRemove }
+
+            val updatedData = mapOf(
+                "product_id" to updatedProductIds.joinToString(","),
+                "amount" to updatedAmounts.joinToString(",")
+            )
+
+            // Обновляем корзину в базе данных
+            val updateResponse = supabaseClient.postgrest["cart"]
+                .update(updatedData) {
+                    filter { eq("user_id", userId) }
+                }
+
+        } else {
+            println("Item $productId not found in cart.")
+        }
+    } catch (e: Exception) {
+        println("Error deleting item $productId: ${e.localizedMessage}")
     }
 }
+
+
 
 
 
